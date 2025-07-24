@@ -1,6 +1,9 @@
 # Multi-Level Prototype Alignment for Cross-Domain Few-Shot Hyperspectral Image Classification
 This is a code demo for the paper "Multi-Level Prototype Alignment for Cross-Domain Few-Shot Hyperspectral Image Classification"
 
+## Note
+We've updated the code to incorporate the Alternating Fine-tuning Training Paradigm introduced in this paper!!!
+
 ## Requirements
 CUDA = 11.3
 Python = 3.8
