@@ -1,12 +1,12 @@
-#Multi-Level Prototype Alignment for Cross-Domain Few-Shot Hyperspectral Image Classification
+# Multi-Level Prototype Alignment for Cross-Domain Few-Shot Hyperspectral Image Classification
 This is a code demo for the paper "Multi-Level Prototype Alignment for Cross-Domain Few-Shot Hyperspectral Image Classification"
 
-##Requirements
+## Requirements
 CUDA = 11.3
 Python = 3.8
 Pytorch = 1.12.1
 
-##dataset
+## dataset
 1. target domain data set:
 
 You can download the hyperspectral datasets in mat format at: http://www.ehu.eus/ccwintco/index.php/Hyperspectral_Remote_Sensing_Scenes, and move the files to `./datasets` folder.
