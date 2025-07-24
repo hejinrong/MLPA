@@ -467,6 +467,9 @@ for iDataSet in range(nDataSet):
         # source domain few-shot + domain adaptation
         if episode % 2 == 0:
             '''Few-shot claification for source domain data set'''
+            for param in feature_encoder.parameters():
+                param.requires_grad = True
+            
             # get few-shot classification samples
             task = utils.Task(metatrain_data, CLASS_NUM, SHOT_NUM_PER_CLASS, QUERY_NUM_PER_CLASS)  # 5， 1，15
             support_dataloader = utils.get_HBKC_data_loader(task, num_per_class=SHOT_NUM_PER_CLASS, split="train", shuffle=False)
@@ -682,6 +685,11 @@ for iDataSet in range(nDataSet):
         # target domain few-shot + domain adaptation
         else:
             '''Few-shot classification for target domain data set'''
+            for param in feature_encoder.feature_encoder.block1.parameters():
+                param.requires_grad = False
+            for param in feature_encoder.feature_encoder.block2.parameters():
+                param.requires_grad = False
+            
             # get few-shot classification samples
             task = utils.Task(target_da_metatrain_data, TEST_CLASS_NUM, SHOT_NUM_PER_CLASS, QUERY_NUM_PER_CLASS)  # 5， 1，15
             support_dataloader = utils.get_HBKC_data_loader(task, num_per_class=SHOT_NUM_PER_CLASS, split="train", shuffle=False)
