@@ -33,7 +33,7 @@ import models
 
 
 parser = argparse.ArgumentParser(description="Few Shot Visual Recognition")
-parser.add_argument("-f","--feature_dim",type = int, default = 160)              ###############################
+parser.add_argument("-f","--feature_dim",type = int, default = 160)              
 parser.add_argument("-c","--src_input_dim",type = int, default = 128)
 parser.add_argument("-d","--tar_input_dim",type = int, default = 200) # PaviaU=103；salinas=204
 parser.add_argument("-n","--n_dim",type = int, default = 100)
@@ -334,7 +334,7 @@ class D_Res_3d_CNN(nn.Module):
         x = self.conv(x) #(1,32,5,1,1)
         x = x.view(x.shape[0],-1) #(1,160)
         # y = self.classifier(x)
-        return x,y1,y2                         #########################################################
+        return x,y1,y2                         
 
 
 class Mapping(nn.Module):
@@ -355,7 +355,7 @@ class Network(nn.Module):
         self.final_feat_dim = FEATURE_DIM  # 64+32
         #         self.bn = nn.BatchNorm1d(self.final_feat_dim)
         #self.classifier = nn.Linear(in_features=self.final_feat_dim, out_features=CLASS_NUM)
-        self.classifier = nn.Linear(in_features=160, out_features=CLASS_NUM)     ###########################################
+        self.classifier = nn.Linear(in_features=160, out_features=CLASS_NUM)     
         self.target_mapping = Mapping(TAR_INPUT_DIMENSION, N_DIMENSION)
         self.source_mapping = Mapping(SRC_INPUT_DIMENSION, N_DIMENSION)
 
@@ -366,10 +366,10 @@ class Network(nn.Module):
         elif domain == 'source':
             x = self.source_mapping(x)  # (45, 100,9,9)
         # print(x.shape)#torch.Size([45, 100, 9, 9])
-        feature,shallow_res1_feature,shallow_res2_feature = self.feature_encoder(x)  # (45, 64)    ###########################################
+        feature,shallow_res1_feature,shallow_res2_feature = self.feature_encoder(x)  # (45, 64)   
         # print((feature.shape))
         output = self.classifier(feature)
-        return feature, output, shallow_res1_feature, shallow_res2_feature                      ######################################
+        return feature, output, shallow_res1_feature, shallow_res2_feature                     
 
 
 def weights_init(m):
@@ -418,17 +418,16 @@ for iDataSet in range(nDataSet):
     feature_encoder = Network()
     domain_classifier = models.DomainClassifier()
     random_layer = models.RandomLayer([args.feature_dim, args.class_num], 1024)
-    random_layer_shallow_res1 = models.RandomLayer([800, args.class_num], 1024)   ############################################
-    random_layer_shallow_res2 = models.RandomLayer([400, args.class_num], 1024)   ############################################
-
+    random_layer_shallow_res1 = models.RandomLayer([800, args.class_num], 1024)   
+    random_layer_shallow_res2 = models.RandomLayer([400, args.class_num], 1024)   
     feature_encoder.apply(weights_init)
     domain_classifier.apply(weights_init)
 
     feature_encoder.cuda()
     domain_classifier.cuda()
     random_layer.cuda()  # Random layer
-    random_layer_shallow_res1.cuda()                       ######################################################################
-    random_layer_shallow_res2.cuda()                       ######################################################################
+    random_layer_shallow_res1.cuda()                       
+    random_layer_shallow_res2.cuda()                       
 
     feature_encoder.train()
     domain_classifier.train()
@@ -468,6 +467,9 @@ for iDataSet in range(nDataSet):
         # source domain few-shot + domain adaptation
         if episode % 2 == 0:
             '''Few-shot claification for source domain data set'''
+            for param in feature_encoder.parameters():
+                param.requires_grad = True
+            
             # get few-shot classification samples
             task = utils.Task(metatrain_data, CLASS_NUM, SHOT_NUM_PER_CLASS, QUERY_NUM_PER_CLASS)  # 5， 1，15
             support_dataloader = utils.get_HBKC_data_loader(task, num_per_class=SHOT_NUM_PER_CLASS, split="train", shuffle=False)
@@ -492,14 +494,13 @@ for iDataSet in range(nDataSet):
             logits = euclidean_metric(query_features, support_proto)
             f_loss = crossEntropy(logits, query_labels.cuda().long())
 
-############################################################################################################
             '''deep domain adaptation'''
             # 生成排序索引
-            sorted_indices = torch.argsort(query_labels)  #########################
+            sorted_indices = torch.argsort(query_labels)  
             # 使用排序索引对query_features进行重新排序
-            sorted_query_features = query_features[sorted_indices]  ###############################
+            sorted_query_features = query_features[sorted_indices]  
             # 求query_features的原型
-            query_features_proto = sorted_query_features.reshape(CLASS_NUM, QUERY_NUM_PER_CLASS, -1).mean(dim=1)  ###############################
+            query_features_proto = sorted_query_features.reshape(CLASS_NUM, QUERY_NUM_PER_CLASS, -1).mean(dim=1)  
 
             # 目标域数据集生成排序索引
             target_sorted_indices = torch.argsort(target_label)
@@ -518,11 +519,10 @@ for iDataSet in range(nDataSet):
 
             target_features_proto = torch.stack(target_features_proto)
 
-            ############################################################################################
 
             # calculate domain adaptation loss
             # features = torch.cat([support_features, query_features, target_features], dim=0)
-            deep_features = torch.cat([support_proto, query_features_proto, target_features_proto],dim=0)  ##########################
+            deep_features = torch.cat([support_proto, query_features_proto, target_features_proto],dim=0) 
             # print("域特征f大小：",features.shape)
 
             outputs = torch.cat((support_outputs, query_outputs, target_outputs), dim=0)
@@ -532,8 +532,8 @@ for iDataSet in range(nDataSet):
             # domain_label = torch.zeros([supports.shape[0] + querys.shape[0] + target_data.shape[0], 1]).cuda()
             # domain_label[:supports.shape[0] + querys.shape[0]] = 1  # torch.Size([225=9*20+9*4, 100, 9, 9])
 
-            domain_label = torch.zeros([support_proto.shape[0] + query_features_proto.shape[0] + target_features_proto.shape[0],1]).cuda()  #####################
-            domain_label[:support_proto.shape[0] + query_features_proto.shape[0]] = 1  # torch.Size([225=9*20+9*4, 100, 9, 9])   ##############################
+            domain_label = torch.zeros([support_proto.shape[0] + query_features_proto.shape[0] + target_features_proto.shape[0],1]).cuda()  
+            domain_label[:support_proto.shape[0] + query_features_proto.shape[0]] = 1  # torch.Size([225=9*20+9*4, 100, 9, 9])   
 
             randomlayer_out = random_layer.forward([deep_features, softmax_output])  # torch.Size([225, 1024=32*7*3*3])
 
@@ -541,9 +541,8 @@ for iDataSet in range(nDataSet):
 
             deep_domain_logits = domain_classifier(randomlayer_out, episode)
             deep_domain_loss = domain_criterion(deep_domain_logits, domain_label)
-####################################################################################################################
 
-############################################################################################################################################
+
             '''shallow res1 domain adaptation'''
             # 求support_shallow_features的原型
             if SHOT_NUM_PER_CLASS > 1:
@@ -554,15 +553,15 @@ for iDataSet in range(nDataSet):
                 support_shallow_res1_features_proto = support_shallow_res1_features
 
             # 生成排序索引
-            sorted_indices = torch.argsort(query_labels)  #########################
+            sorted_indices = torch.argsort(query_labels)  
             # 使用排序索引对query_shallow_features进行重新排序
             sorted_query_shallow_res1_features = query_shallow_res1_features[
-                sorted_indices]  ###############################
+                sorted_indices] 
             # 求query_shallow_features的原型
             query_shallow_res1_features_proto = sorted_query_shallow_res1_features.reshape(CLASS_NUM,
                                                                                            QUERY_NUM_PER_CLASS,
                                                                                            -1).mean(
-                dim=1)  ###############################
+                dim=1)  
 
             # 目标域数据集生成排序索引
             target_sorted_indices = torch.argsort(target_label)
@@ -581,12 +580,12 @@ for iDataSet in range(nDataSet):
 
             target_shallow_res1_features_proto = torch.stack(target_shallow_res1_features_proto)
 
-            ############################################################################################
+
 
             # calculate domain adaptation loss
             # features = torch.cat([support_features, query_features, target_features], dim=0)
             shallow_res1_features = torch.cat([support_shallow_res1_features_proto, query_shallow_res1_features_proto,
-                                          target_shallow_res1_features_proto], dim=0)  ##########################
+                                          target_shallow_res1_features_proto], dim=0)  
             # print("域特征f大小：",features.shape)
             outputs = torch.cat((support_outputs, query_outputs, target_outputs), dim=0)
             softmax_output = nn.Softmax(dim=1)(outputs)
@@ -597,9 +596,9 @@ for iDataSet in range(nDataSet):
 
             domain_label = torch.zeros([support_shallow_res1_features_proto.shape[0] +
                                         query_shallow_res1_features_proto.shape[0] +
-                                        target_shallow_res1_features_proto.shape[0], 1]).cuda()  #####################
+                                        target_shallow_res1_features_proto.shape[0], 1]).cuda() 
             domain_label[:support_shallow_res1_features_proto.shape[0] + query_shallow_res1_features_proto.shape[
-                0]] = 1  # torch.Size([225=9*20+9*4, 100, 9, 9])   ##############################
+                0]] = 1  # torch.Size([225=9*20+9*4, 100, 9, 9])  
 
             # randomlayer_out = random_layer.forward([shallow_features, softmax_output])     # torch.Size([225, 1024=32*7*3*3])
             randomlayer_out_shallow_res1 = random_layer_shallow_res1.forward([shallow_res1_features, softmax_output])
@@ -609,9 +608,7 @@ for iDataSet in range(nDataSet):
             shallow_res1_domain_logits = domain_classifier(randomlayer_out_shallow_res1, episode)
             shallow_res1_domain_loss = domain_criterion(shallow_res1_domain_logits, domain_label)
 
-###############################################################################################################################################
 
- ##############################################################################################################################################
             '''shallow res2 domain adaptation'''
             # 求support_shallow_features的原型
             if SHOT_NUM_PER_CLASS > 1:
@@ -620,11 +617,11 @@ for iDataSet in range(nDataSet):
                 support_shallow_res2_features_proto = support_shallow_res2_features
 
             # 生成排序索引
-            sorted_indices = torch.argsort(query_labels)  #########################
+            sorted_indices = torch.argsort(query_labels)  
             # 使用排序索引对query_shallow_features进行重新排序
-            sorted_query_shallow_res2_features = query_shallow_res2_features[sorted_indices]  ###############################
+            sorted_query_shallow_res2_features = query_shallow_res2_features[sorted_indices]  
             # 求query_shallow_features的原型
-            query_shallow_res2_features_proto = sorted_query_shallow_res2_features.reshape(CLASS_NUM, QUERY_NUM_PER_CLASS,-1).mean(dim=1)  ###############################
+            query_shallow_res2_features_proto = sorted_query_shallow_res2_features.reshape(CLASS_NUM, QUERY_NUM_PER_CLASS,-1).mean(dim=1) 
 
             # 目标域数据集生成排序索引
             target_sorted_indices = torch.argsort(target_label)
@@ -643,11 +640,10 @@ for iDataSet in range(nDataSet):
 
             target_shallow_res2_features_proto = torch.stack(target_shallow_res2_features_proto)
 
-            ############################################################################################
 
             # calculate domain adaptation loss
             # features = torch.cat([support_features, query_features, target_features], dim=0)
-            shallow_res2_features = torch.cat([support_shallow_res2_features_proto, query_shallow_res2_features_proto, target_shallow_res2_features_proto],dim=0)  ##########################
+            shallow_res2_features = torch.cat([support_shallow_res2_features_proto, query_shallow_res2_features_proto, target_shallow_res2_features_proto],dim=0)  
             # print("域特征f大小：",features.shape)
             outputs = torch.cat((support_outputs, query_outputs, target_outputs), dim=0)
             softmax_output = nn.Softmax(dim=1)(outputs)
@@ -656,9 +652,8 @@ for iDataSet in range(nDataSet):
             # domain_label = torch.zeros([supports.shape[0] + querys.shape[0] + target_data.shape[0], 1]).cuda()
             # domain_label[:supports.shape[0] + querys.shape[0]] = 1  # torch.Size([225=9*20+9*4, 100, 9, 9])
 
-            domain_label = torch.zeros([support_shallow_res2_features_proto.shape[0] + query_shallow_res2_features_proto.shape[0] +target_shallow_res2_features_proto.shape[0], 1]).cuda()  #####################
-            domain_label[:support_shallow_res2_features_proto.shape[0] + query_shallow_res2_features_proto.shape[0]] = 1  # torch.Size([225=9*20+9*4, 100, 9, 9])   ##############################
-
+            domain_label = torch.zeros([support_shallow_res2_features_proto.shape[0] + query_shallow_res2_features_proto.shape[0] +target_shallow_res2_features_proto.shape[0], 1]).cuda()  
+            domain_label[:support_shallow_res2_features_proto.shape[0] + query_shallow_res2_features_proto.shape[0]] = 1  # torch.Size([225=9*20+9*4, 100, 9, 9])  
            # randomlayer_out = random_layer.forward([shallow_features, softmax_output])     # torch.Size([225, 1024=32*7*3*3])
             randomlayer_out_shallow_res2 = random_layer_shallow_res2.forward([shallow_res2_features, softmax_output])
 
@@ -669,7 +664,7 @@ for iDataSet in range(nDataSet):
 
             # total_loss = fsl_loss + domain_loss
             loss = f_loss + shallow_res1_domain_loss + shallow_res2_domain_loss + deep_domain_loss  # 0.01
-#########################################################################################################################
+
 
             # Update parameters
             feature_encoder.zero_grad()
@@ -683,6 +678,11 @@ for iDataSet in range(nDataSet):
         # target domain few-shot + domain adaptation
         else:
             '''Few-shot classification for target domain data set'''
+            for param in feature_encoder.feature_encoder.block1.parameters():
+                param.requires_grad = False
+            for param in feature_encoder.feature_encoder.block2.parameters():
+                param.requires_grad = False
+            
             # get few-shot classification samples
             task = utils.Task(target_da_metatrain_data, TEST_CLASS_NUM, SHOT_NUM_PER_CLASS, QUERY_NUM_PER_CLASS)  # 5， 1，15
             support_dataloader = utils.get_HBKC_data_loader(task, num_per_class=SHOT_NUM_PER_CLASS, split="train", shuffle=False)
@@ -707,14 +707,14 @@ for iDataSet in range(nDataSet):
             logits = euclidean_metric(query_features, support_proto)
             f_loss = crossEntropy(logits, query_labels.cuda().long())
 
-            ############################################################################################################
+
             '''deep domain adaptation'''
             # 生成排序索引
-            sorted_indices = torch.argsort(query_labels)  #########################
+            sorted_indices = torch.argsort(query_labels)  
             # 使用排序索引对query_features进行重新排序
-            sorted_query_features = query_features[sorted_indices]  ###############################
+            sorted_query_features = query_features[sorted_indices] 
             # 求query_features的原型
-            query_features_proto = sorted_query_features.reshape(CLASS_NUM, QUERY_NUM_PER_CLASS, -1).mean(dim=1)  ###############################
+            query_features_proto = sorted_query_features.reshape(CLASS_NUM, QUERY_NUM_PER_CLASS, -1).mean(dim=1) 
 
             # 源数据集生成排序索引
             source_sorted_indices = torch.argsort(source_label)
@@ -733,11 +733,10 @@ for iDataSet in range(nDataSet):
 
             source_features_proto = torch.stack(source_features_proto)
 
-            ############################################################################################
 
             # calculate domain adaptation loss
             # features = torch.cat([support_features, query_features, target_features], dim=0)
-            deep_features = torch.cat([support_proto, query_features_proto, source_features_proto],dim=0)  ##########################
+            deep_features = torch.cat([support_proto, query_features_proto, source_features_proto],dim=0) 
             # print("域特征f大小：",features.shape)
 
             outputs = torch.cat((support_outputs, query_outputs, source_outputs), dim=0)
@@ -750,17 +749,15 @@ for iDataSet in range(nDataSet):
             # print("query_features_proto:", query_features_proto.shape[0])
             # print("target_features_proto:", target_features_proto.shape[0])
 
-            domain_label = torch.zeros([support_proto.shape[0] + query_features_proto.shape[0] + source_features_proto.shape[0],1]).cuda()  #####################
-            domain_label[:support_proto.shape[0] + query_features_proto.shape[0]] = 1  # torch.Size([225=9*20+9*4, 100, 9, 9])   ##############################
+            domain_label = torch.zeros([support_proto.shape[0] + query_features_proto.shape[0] + source_features_proto.shape[0],1]).cuda() 
+            domain_label[:support_proto.shape[0] + query_features_proto.shape[0]] = 1  # torch.Size([225=9*20+9*4, 100, 9, 9])   
             randomlayer_out = random_layer.forward([deep_features, softmax_output])  # torch.Size([225, 1024=32*7*3*3])
 
             # print("域融合特征f.g大小：", randomlayer_out.shape)
 
             deep_domain_logits = domain_classifier(randomlayer_out, episode)
             deep_domain_loss = domain_criterion(deep_domain_logits, domain_label)
-            ####################################################################################################################
 
-            ##############################################################################################################################################
             '''shallow res1 domain adaptation'''
             # 求support_shallow_features的原型
             if SHOT_NUM_PER_CLASS > 1:
@@ -770,13 +767,13 @@ for iDataSet in range(nDataSet):
                 support_shallow_res1_features_proto = support_shallow_res1_features
 
             # 生成排序索引
-            sorted_indices = torch.argsort(query_labels)  #########################
+            sorted_indices = torch.argsort(query_labels) 
             # 使用排序索引对query_shallow_features进行重新排序
-            sorted_query_shallow_res1_features = query_shallow_res1_features[sorted_indices]  ###############################
+            sorted_query_shallow_res1_features = query_shallow_res1_features[sorted_indices] 
             # 求query_shallow_features的原型
             query_shallow_res1_features_proto = sorted_query_shallow_res1_features.reshape(CLASS_NUM, QUERY_NUM_PER_CLASS,
                                                                                  -1).mean(
-                dim=1)  ###############################
+                dim=1) 
 
             # 源域数据集生成排序索引
             source_sorted_indices = torch.argsort(source_label)
@@ -795,13 +792,12 @@ for iDataSet in range(nDataSet):
 
             source_shallow_res1_features_proto = torch.stack(source_shallow_res1_features_proto)
 
-            ############################################################################################
 
             # calculate domain adaptation loss
             # features = torch.cat([support_features, query_features, target_features], dim=0)
             shallow_res1_features = torch.cat(
                 [support_shallow_res1_features_proto, query_shallow_res1_features_proto, source_shallow_res1_features_proto],
-                dim=0)  ##########################
+                dim=0) 
             # print("域特征f大小：",features.shape)
             outputs = torch.cat((support_outputs, query_outputs, source_outputs), dim=0)
             softmax_output = nn.Softmax(dim=1)(outputs)
@@ -811,9 +807,9 @@ for iDataSet in range(nDataSet):
             # domain_label[:supports.shape[0] + querys.shape[0]] = 1  # torch.Size([225=9*20+9*4, 100, 9, 9])
 
             domain_label = torch.zeros([support_shallow_res1_features_proto.shape[0] + query_shallow_res1_features_proto.shape[
-                0] + source_shallow_res1_features_proto.shape[0], 1]).cuda()  #####################
+                0] + source_shallow_res1_features_proto.shape[0], 1]).cuda()  
             domain_label[:support_shallow_res1_features_proto.shape[0] + query_shallow_res1_features_proto.shape[
-                0]] = 1  # torch.Size([225=9*20+9*4, 100, 9, 9])   ##############################
+                0]] = 1  # torch.Size([225=9*20+9*4, 100, 9, 9])   
 
             # randomlayer_out = random_layer.forward(
             #     [shallow_features, softmax_output])  # torch.Size([225, 1024=32*7*3*3])
@@ -823,9 +819,7 @@ for iDataSet in range(nDataSet):
 
             shallow_res1_domain_logits = domain_classifier(randomlayer_out_shallow_res1, episode)
             shallow_res1_domain_loss = domain_criterion(shallow_res1_domain_logits, domain_label)
-############################################################################################################################################
 
-##############################################################################################################################################
             '''shallow res2 domain adaptation'''
             # 求support_shallow_features的原型
             if SHOT_NUM_PER_CLASS > 1:
@@ -835,13 +829,13 @@ for iDataSet in range(nDataSet):
                 support_shallow_res2_features_proto = support_shallow_res2_features
 
             # 生成排序索引
-            sorted_indices = torch.argsort(query_labels)  #########################
+            sorted_indices = torch.argsort(query_labels) 
             # 使用排序索引对query_shallow_features进行重新排序
-            sorted_query_shallow_res2_features = query_shallow_res2_features[sorted_indices]  ###############################
+            sorted_query_shallow_res2_features = query_shallow_res2_features[sorted_indices]  
             # 求query_shallow_features的原型
             query_shallow_res2_features_proto = sorted_query_shallow_res2_features.reshape(CLASS_NUM, QUERY_NUM_PER_CLASS,
                                                                                  -1).mean(
-                dim=1)  ###############################
+                dim=1)  
 
             # 源域数据集生成排序索引
             source_sorted_indices = torch.argsort(source_label)
@@ -860,13 +854,12 @@ for iDataSet in range(nDataSet):
 
             source_shallow_res2_features_proto = torch.stack(source_shallow_res2_features_proto)
 
-            ############################################################################################
 
             # calculate domain adaptation loss
             # features = torch.cat([support_features, query_features, target_features], dim=0)
             shallow_res2_features = torch.cat(
                 [support_shallow_res2_features_proto, query_shallow_res2_features_proto, source_shallow_res2_features_proto],
-                dim=0)  ##########################
+                dim=0)  
             # print("域特征f大小：",features.shape)
             outputs = torch.cat((support_outputs, query_outputs, source_outputs), dim=0)
             softmax_output = nn.Softmax(dim=1)(outputs)
@@ -876,9 +869,9 @@ for iDataSet in range(nDataSet):
             # domain_label[:supports.shape[0] + querys.shape[0]] = 1  # torch.Size([225=9*20+9*4, 100, 9, 9])
 
             domain_label = torch.zeros([support_shallow_res2_features_proto.shape[0] + query_shallow_res2_features_proto.shape[
-                0] + source_shallow_res2_features_proto.shape[0], 1]).cuda()  #####################
+                0] + source_shallow_res2_features_proto.shape[0], 1]).cuda() 
             domain_label[:support_shallow_res2_features_proto.shape[0] + query_shallow_res2_features_proto.shape[
-                0]] = 1  # torch.Size([225=9*20+9*4, 100, 9, 9])   ##############################
+                0]] = 1  # torch.Size([225=9*20+9*4, 100, 9, 9])   
 
             # randomlayer_out = random_layer.forward(
             #     [shallow_features, softmax_output])  # torch.Size([225, 1024=32*7*3*3])
@@ -891,7 +884,6 @@ for iDataSet in range(nDataSet):
 
             # total_loss = fsl_loss + domain_loss
             loss = f_loss +shallow_res1_domain_loss + shallow_res2_domain_loss + deep_domain_loss  # 0.01
-##########################################################################################################################
 
             # Update parameters
             feature_encoder.zero_grad()
